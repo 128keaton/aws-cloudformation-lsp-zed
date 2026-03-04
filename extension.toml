@@ -1,0 +1,15 @@
+id = "aws-cloudformation"
+name = "AWS Cloudformation"
+version = "0.1.0"
+schema_version = 1
+authors = ["Your Name <your.email@example.com>"]
+description = "AWS Cloudformation LSP for Zed"
+repository = "https://github.com/yourusername/zed-sonarlint"
+
+[grammars.yaml]
+repository = "https://github.com/tree-sitter-grammars/tree-sitter-yaml"
+rev = "4463985dfccc640f3d6991e3396a2047610cf5f8"
+
+[language_servers.aws_cloudformation]
+name = "AWS Cloudformation Language Server"
+language = "YAML"
