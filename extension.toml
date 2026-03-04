@@ -5,6 +5,7 @@ schema_version = 1
 authors = ["Keaton Burleson <keaton.burleson@me.com>"]
 description = "AWS Cloudformation LSP for Zed"
 repository = "https://github.com/128keaton/aws-cloudformation-lsp-zed"
+first_line_pattern = "^[{]\n*\s*"AWS.*|AWSTemplateFormatVersion:\s*["|']\d{4}-\d{2}-\d{2}["|']
 
 [grammars.yaml]
 repository = "https://github.com/tree-sitter-grammars/tree-sitter-yaml"

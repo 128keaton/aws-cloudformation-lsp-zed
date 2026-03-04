@@ -217,7 +217,7 @@ impl AwsCloudformationExtension {
             }),
             diagnostics: Some(DiagnosticsSettings {
                 cfn_lint: Some(CfnLintSettings {
-                    enabled: Some(false),
+                    enabled: Some(true),
                     lint_on_change: Some(true),
                     initialization: Some(CfnLintInitializationSettings {
                         max_retries: Some(Number::from(3)),
@@ -399,7 +399,6 @@ impl zed::Extension for AwsCloudformationExtension {
         })
     }
 
-    // TODO: Fix this to properly merge settings from all sources (default, global, workspace) instead of just using the default settings.
     fn language_server_workspace_configuration(
         &mut self,
         _language_server_id: &zed::LanguageServerId,
