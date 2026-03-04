@@ -455,7 +455,7 @@ impl zed::Extension for AwsCloudformationExtension {
             .language_server_binary_path(language_server_id, worktree)
             .unwrap_or_else(|e| {
                 eprintln!("Error finding language server binary: {e}");
-                e.to_string() // Fallback to default path
+                "cfn-lsp-server-standalone.js".to_string()
             })
             .to_string()
             .to_owned();
@@ -464,9 +464,9 @@ impl zed::Extension for AwsCloudformationExtension {
 
         if !binary_path.exists() {
             return Err(format!(
-                    "AWS Cloudformation language server not found at {:?}. Please run Zed's extension install process again.",
-                    binary_path
-                ));
+                "AWS Cloudformation LSP binary not found at {:?}.",
+                binary_path
+            ));
         }
 
         Ok(zed::Command {
