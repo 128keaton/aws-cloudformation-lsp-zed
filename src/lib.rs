@@ -3,7 +3,7 @@ use serde_json::Number;
 
 use std::path::PathBuf;
 use std::{env, fs};
-use zed_extension_api::{self as zed, serde_json, LanguageServerId, Result};
+use zed_extension_api::{self as zed, settings::LspSettings, LanguageServerId, Result};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CfnLintInitializationSettings {
@@ -201,31 +201,7 @@ pub struct AwsCloudformationExtension {
 }
 
 impl AwsCloudformationExtension {
-    fn load_aws_cloudformation_lsp_settings(&self, worktree: &zed::Worktree) -> Settings {
-        // Try to load settings from various configuration sources
-
-        // 1. Check for .sonarlint/settings.json in project root
-        let worktree_path = PathBuf::from(worktree.root_path());
-        let aws_settings_path = worktree_path.join(".aws").join("settings.json");
-
-        if let Ok(settings_content) = fs::read_to_string(&aws_settings_path) {
-            if let Ok(settings) = serde_json::from_str::<Settings>(&settings_content) {
-                return settings;
-            }
-        }
-
-        // 2. Check for AWS configuration in .zed/aws_settings.json
-        let zed_settings_path = worktree_path.join(".zed").join("aws_settings.json");
-        if let Ok(settings_content) = fs::read_to_string(&zed_settings_path) {
-            if let Ok(zed_settings) = serde_json::from_str::<serde_json::Value>(&settings_content) {
-                if let Some(config) = zed_settings.get("aws") {
-                    if let Ok(settings) = serde_json::from_value::<Settings>(config.clone()) {
-                        return settings;
-                    }
-                }
-            }
-        }
-
+    fn get_default_lsp_settings(&self) -> Settings {
         // 3. Default settings (standalone mode)
         Settings {
             profile: Some(ProfileSettings {
@@ -241,7 +217,7 @@ impl AwsCloudformationExtension {
             }),
             diagnostics: Some(DiagnosticsSettings {
                 cfn_lint: Some(CfnLintSettings {
-                    enabled: Some(true),
+                    enabled: Some(false),
                     lint_on_change: Some(true),
                     initialization: Some(CfnLintInitializationSettings {
                         max_retries: Some(Number::from(3)),
@@ -294,59 +270,6 @@ impl AwsCloudformationExtension {
                 }),
             }),
         }
-    }
-
-    fn create_config(&self, settings: &Settings) -> serde_json::Value {
-        let config = serde_json::json!({
-            "profile": {
-                "region": settings.profile.as_ref().and_then(|f| f.region.as_ref()).cloned().unwrap_or("us-east-1".to_string()),
-                "profile": settings.profile.as_ref().and_then(|f| f.profile.as_ref()).cloned().unwrap_or("default".to_string())
-            },
-            "hover": {
-                "enabled": settings.hover.as_ref().and_then(|f| f.enabled).unwrap_or(true)
-            },
-            "completion": {
-                "enabled": settings.completion.as_ref().and_then(|f| f.enabled).unwrap_or(true),
-                "maxCompletions": settings.completion.as_ref().and_then(|f| f.max_completions.as_ref()).cloned().unwrap_or(Number::from(100)),
-            },
-            "diagnostics": {
-                "cfnLint": match settings.diagnostics.as_ref().and_then(|f| f.cfn_lint.as_ref()) {
-                    Some(cfn_lint) => serde_json::json!({
-                        "enabled": cfn_lint.enabled,
-                        "lintOnChange": cfn_lint.lint_on_change,
-                        "initialization": cfn_lint.initialization,
-                        "ignoreChecks": cfn_lint.ignore_checks,
-                        "includeChecks": cfn_lint.include_checks,
-                        "mandatoryChecks": cfn_lint.mandatory_checks,
-                        "includeExperimental": cfn_lint.include_experimental,
-                        "configureRules": cfn_lint.configure_rules,
-                        "regions": cfn_lint.regions,
-                        "customRules": cfn_lint.custom_rules,
-                        "appendRules": cfn_lint.append_rules,
-                        "overrideSpec": cfn_lint.override_spec,
-                        "registrySchemas": cfn_lint.registry_schemas,
-                    }),
-                    None => serde_json::Value::Null,
-                },
-                "cfnGuard": match settings.diagnostics.as_ref().and_then(|f| f.cfn_guard.as_ref()) {
-                    Some(cfn_guard) => serde_json::json!({
-                        "enabled": cfn_guard.enabled,
-                        "delayMs": cfn_guard.delay_ms,
-                        "validateOnChange": cfn_guard.validate_on_change,
-                        "enabledRulePacks": cfn_guard.enabled_rule_packs,
-                        "timeout": cfn_guard.timeout,
-                        "maxConcurrentValidations": cfn_guard.max_concurrent_validations,
-                        "maxQueueSize": cfn_guard.max_queue_size,
-                        "memoryCleanupInterval": cfn_guard.memory_cleanup_interval,
-                        "maxMemoryUsage": cfn_guard.max_memory_usage,
-                        "defaultSeverity": cfn_guard.default_severity,
-                    }),
-                    None => serde_json::Value::Null,
-                },
-            },
-        });
-
-        config
     }
 }
 
@@ -476,14 +399,24 @@ impl zed::Extension for AwsCloudformationExtension {
         })
     }
 
+    // TODO: Fix this to properly merge settings from all sources (default, global, workspace) instead of just using the default settings.
     fn language_server_workspace_configuration(
         &mut self,
         _language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
     ) -> Result<Option<serde_json::Value>> {
-        let settings = self.load_aws_cloudformation_lsp_settings(worktree);
-        let config = self.create_config(&settings);
-        Ok(Some(config))
+        let settings = LspSettings::for_worktree("aws-cloudformation", worktree)
+            .ok()
+            .and_then(|lsp_settings| lsp_settings.settings.clone())
+            .unwrap_or_else(|| {
+                eprintln!("No user settings found, using default settings.");
+                serde_json::to_value(self.get_default_lsp_settings()).unwrap_or_else(|e| {
+                    eprintln!("Failed to serialize default settings: {e}");
+                    serde_json::Value::Null
+                })
+            });
+
+        return Ok(Some(settings));
     }
 }
 

@@ -10,6 +10,6 @@ repository = "https://github.com/yourusername/zed-sonarlint"
 repository = "https://github.com/tree-sitter-grammars/tree-sitter-yaml"
 rev = "4463985dfccc640f3d6991e3396a2047610cf5f8"
 
-[language_servers.aws_cloudformation]
+[language_servers.aws-cloudformation]
 name = "AWS Cloudformation Language Server"
 language = "YAML"
