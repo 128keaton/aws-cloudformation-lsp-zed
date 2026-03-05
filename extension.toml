@@ -18,3 +18,7 @@ rev = "001c28d7a29832b06b0e831ec77845553c89b56d"
 [language_servers.aws-cloudformation]
 name = "AWS Cloudformation Language Server"
 languages = ["YAML", "JSON"]
+
+[language-servers.aws-cloudformation.language_ids]
+"YAML" = "yaml"
+"JSON" = "json"
