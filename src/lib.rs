@@ -1,208 +1,65 @@
-use serde::{Deserialize, Serialize};
-use serde_json::Number;
-
+use serde_json::{Number, Value};
 use std::path::PathBuf;
 use std::{env, fs};
+
+mod structs;
+use structs::*;
 use zed_extension_api::{self as zed, settings::LspSettings, LanguageServerId, Result};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CfnLintInitializationSettings {
-    #[serde(rename = "maxRetries", skip_serializing_if = "Option::is_none")]
-    pub max_retries: Option<Number>,
-
-    #[serde(rename = "initialDelayMs", skip_serializing_if = "Option::is_none")]
-    pub initial_delay_ms: Option<Number>,
-
-    #[serde(rename = "maxDelayMs", skip_serializing_if = "Option::is_none")]
-    pub max_delay_ms: Option<Number>,
-
-    #[serde(rename = "backoffMultiplier", skip_serializing_if = "Option::is_none")]
-    pub backoff_multiplier: Option<Number>,
-
-    #[serde(rename = "totalTimeoutMs", skip_serializing_if = "Option::is_none")]
-    pub total_timeout_ms: Option<Number>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CfnLintSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-
-    #[serde(rename = "lintOnChange", skip_serializing_if = "Option::is_none")]
-    pub lint_on_change: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub initialization: Option<CfnLintInitializationSettings>,
-
-    #[serde(rename = "ignoreChecks", skip_serializing_if = "Option::is_none")]
-    pub ignore_checks: Option<Vec<String>>,
-
-    #[serde(rename = "includeChecks", skip_serializing_if = "Option::is_none")]
-    pub include_checks: Option<Vec<String>>,
-
-    #[serde(rename = "mandatoryChecks", skip_serializing_if = "Option::is_none")]
-    pub mandatory_checks: Option<Vec<String>>,
-
-    #[serde(
-        rename = "includeExperimental",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub include_experimental: Option<bool>,
-
-    #[serde(rename = "configureRules", skip_serializing_if = "Option::is_none")]
-    pub configure_rules: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub regions: Option<Vec<String>>,
-
-    #[serde(rename = "customRules", skip_serializing_if = "Option::is_none")]
-    pub custom_rules: Option<Vec<String>>,
-
-    #[serde(rename = "appendRules", skip_serializing_if = "Option::is_none")]
-    pub append_rules: Option<Vec<String>>,
-
-    #[serde(rename = "overrideSpec", skip_serializing_if = "Option::is_none")]
-    pub override_spec: Option<String>,
-
-    #[serde(rename = "registrySchemas", skip_serializing_if = "Option::is_none")]
-    pub registry_schemas: Option<Vec<String>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GuardSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-
-    #[serde(rename = "delayMs", skip_serializing_if = "Option::is_none")]
-    pub delay_ms: Option<Number>,
-    #[serde(rename = "validateOnChange", skip_serializing_if = "Option::is_none")]
-    pub validate_on_change: Option<bool>,
-
-    #[serde(rename = "enabledRulePacks", skip_serializing_if = "Option::is_none")]
-    pub enabled_rule_packs: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timeout: Option<Number>,
-
-    #[serde(
-        rename = "maxConcurrentValidations",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub max_concurrent_validations: Option<Number>,
-
-    #[serde(rename = "maxQueueSize", skip_serializing_if = "Option::is_none")]
-    pub max_queue_size: Option<Number>,
-
-    #[serde(
-        rename = "memoryCleanupInterval",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub memory_cleanup_interval: Option<Number>,
-
-    #[serde(rename = "maxMemoryUsage", skip_serializing_if = "Option::is_none")]
-    pub max_memory_usage: Option<Number>,
-
-    #[serde(rename = "defaultSeverity", skip_serializing_if = "Option::is_none")]
-    pub default_severity: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProfileSettings {
-    pub region: Option<String>,
-    pub profile: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DiagnosticsSettings {
-    #[serde(rename = "cfnLint")]
-    pub cfn_lint: Option<CfnLintSettings>,
-
-    #[serde(rename = "cfnGuard")]
-    pub cfn_guard: Option<GuardSettings>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HoverSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CompletionSettings {
-    #[serde(rename = "maxCompletions")]
-    pub max_completions: Option<Number>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EditorSettings {
-    #[serde(rename = "tabSize")]
-    pub tab_size: Option<Number>,
-
-    #[serde(rename = "insertSpaces")]
-    pub insert_spaces: Option<bool>,
-
-    #[serde(rename = "detectIndentation")]
-    pub detect_indentation: Option<bool>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CloudformationMeta {
-    #[serde(rename = "minDelay")]
-    pub min_delay: Option<Number>,
-
-    #[serde(rename = "maxDelay")]
-    pub max_delay: Option<Number>,
-
-    #[serde(rename = "maxWaitTime")]
-    pub max_wait_time: Option<Number>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Cloudformation {
-    #[serde(rename = "changeSet", skip_serializing_if = "Option::is_none")]
-    pub change_set: Option<CloudformationMeta>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stack: Option<CloudformationMeta>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AwsClientSettings {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cloudformation: Option<Cloudformation>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Settings {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub profile: Option<ProfileSettings>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub hover: Option<HoverSettings>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub completion: Option<CompletionSettings>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub diagnostics: Option<DiagnosticsSettings>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub editor: Option<EditorSettings>,
-
-    #[serde(rename = "awsClient", skip_serializing_if = "Option::is_none")]
-    pub aws_client: Option<AwsClientSettings>,
-}
 
 pub struct AwsCloudformationExtension {
     cached_binary_path: Option<String>,
 }
 
+fn merge(a: &mut Value, b: Value) {
+    if let Value::Object(a) = a {
+        if let Value::Object(b) = b {
+            for (k, v) in b {
+                if v.is_null() {
+                    a.remove(&k);
+                } else {
+                    merge(a.entry(k).or_insert(Value::Null), v);
+                }
+            }
+
+            return;
+        }
+    }
+
+    *a = b;
+}
+
 impl AwsCloudformationExtension {
+    fn get_default_lsp_init_options(
+        &self,
+        settings: Settings,
+        version: String,
+    ) -> InitializationOptions {
+        InitializationOptions {
+            feature_flags: Some(InitializationFeatureFlags {
+                refresh_interval_ms: Some(Number::from(5 * 60 * 1000)),
+                dynamic_refresh_interval_ms: Some(Number::from(60 * 1000)),
+            }),
+            settings: Some(settings),
+            cloudformation: Some(CloudformationInitializationOptions {
+                endpoint: Some("".to_string()),
+            }),
+            telemetry_enabled: Some(false),
+            schema: Some(SchemaOptions {
+                stale_days_threshold: Some(Number::from(5)),
+            }),
+            storage_dir: Some(".zed/aws/cloudformation-lsp".to_string()),
+            log_level: Some(LogLevel::Info),
+            client_info: Some(ClientInfo {
+                client_id: Some("zed-aws-cloudformation-extension".to_string()),
+                extension: Some(ClientInfoExtension {
+                    name: Some("Zed - AWS Cloudformation LSP Extension".to_string()),
+                    version: Some(version),
+                }),
+            }),
+        }
+    }
+
     fn get_default_lsp_settings(&self) -> Settings {
-        // 3. Default settings (standalone mode)
         Settings {
             profile: Some(ProfileSettings {
                 region: Some("us-east-1".to_string()),
@@ -278,6 +135,23 @@ impl AwsCloudformationExtension {
         Self {
             cached_binary_path: None,
         }
+    }
+
+    fn get_base_config(
+        &mut self,
+        language_server_id: &zed::LanguageServerId,
+        worktree: &zed::Worktree,
+    ) -> Value {
+        return LspSettings::for_worktree(language_server_id.to_string().as_str(), worktree)
+            .ok()
+            .and_then(|lsp_settings| lsp_settings.settings.clone())
+            .unwrap_or_else(|| {
+                eprintln!("No user settings found, using default settings.");
+                serde_json::to_value(self.get_default_lsp_settings()).unwrap_or_else(|e| {
+                    eprintln!("Failed to serialize default settings: {e}");
+                    serde_json::Value::Null
+                })
+            });
     }
 
     fn language_server_binary_path(
@@ -399,23 +273,52 @@ impl zed::Extension for AwsCloudformationExtension {
         })
     }
 
-    fn language_server_workspace_configuration(
+    fn language_server_initialization_options(
         &mut self,
-        _language_server_id: &zed::LanguageServerId,
+        language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
     ) -> Result<Option<serde_json::Value>> {
-        let settings = LspSettings::for_worktree("aws-cloudformation", worktree)
-            .ok()
-            .and_then(|lsp_settings| lsp_settings.settings.clone())
-            .unwrap_or_else(|| {
-                eprintln!("No user settings found, using default settings.");
-                serde_json::to_value(self.get_default_lsp_settings()).unwrap_or_else(|e| {
-                    eprintln!("Failed to serialize default settings: {e}");
-                    serde_json::Value::Null
-                })
-            });
+        let settings = self.get_base_config(language_server_id, worktree);
+        let settings_struct: Settings = serde_json::from_value(settings).unwrap();
 
-        return Ok(Some(settings));
+        let mut default_init_options = serde_json::to_value(
+            self.get_default_lsp_init_options(settings_struct.clone(), "0.1.0".to_string()),
+        )
+        .unwrap();
+
+        let init_options =
+            LspSettings::for_worktree(language_server_id.to_string().as_str(), worktree)
+                .ok()
+                .and_then(|lsp_settings| lsp_settings.initialization_options.clone())
+                .unwrap_or_else(|| {
+                    eprintln!("No user init options found, using default init options.");
+                    serde_json::to_value(
+                        self.get_default_lsp_init_options(
+                            settings_struct.clone(),
+                            "0.1.0".to_string(),
+                        ),
+                    )
+                    .unwrap_or_else(|e| {
+                        eprintln!("Failed to serialize default init options: {e}");
+                        serde_json::Value::Null
+                    })
+                });
+        merge(&mut default_init_options, init_options);
+
+        return Ok(Some(default_init_options));
+    }
+
+    fn language_server_workspace_configuration(
+        &mut self,
+        language_server_id: &zed::LanguageServerId,
+        worktree: &zed::Worktree,
+    ) -> Result<Option<serde_json::Value>> {
+        let mut default_settings = serde_json::to_value(self.get_default_lsp_settings()).unwrap();
+        let settings = self.get_base_config(language_server_id, worktree);
+
+        merge(&mut default_settings, settings);
+
+        return Ok(Some(default_settings));
     }
 }
 
