@@ -1,6 +1,6 @@
 # AWS Cloudformation LSP for Zed
 
-Uses my [fork](https://github.com/128keaton/cloudformation-languageserver) of AWS's Cloudformation LSP which patches one issue
+This is a Language Server Protocol (LSP) implementation for AWS CloudFormation templates, designed to provide features such as diagnostics, code completion, and more within the Zed editor.
 
 ## Example Settings
 

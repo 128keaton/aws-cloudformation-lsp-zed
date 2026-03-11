@@ -170,7 +170,7 @@ impl AwsCloudformationExtension {
             &zed::LanguageServerInstallationStatus::CheckingForUpdate,
         );
         let release = zed::latest_github_release(
-            "128keaton/cloudformation-languageserver",
+            "aws-cloudformation/cloudformation-languageserver",
             zed::GithubReleaseOptions {
                 require_assets: true,
                 pre_release: false,
